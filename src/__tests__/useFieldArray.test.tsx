@@ -3889,6 +3889,82 @@ describe('useFieldArray', () => {
 
       expect(screen.queryByAltText('Please enter some data')).toBeNull();
     });
+
+    it('should skip field array validation when mode is onBlur and fields are untouched', async () => {
+      const App = () => {
+        const {
+          control,
+          handleSubmit,
+          formState: { errors },
+        } = useForm({
+          defaultValues: {
+            test: [{ name: 'item1' }],
+          },
+          mode: 'onBlur',
+        });
+
+        const { fields, append, remove } = useFieldArray({
+          control,
+          name: 'test',
+          rules: {
+            minLength: {
+              value: 2,
+              message: 'Min length should be 2',
+            },
+          },
+        });
+
+        return (
+          <form onSubmit={handleSubmit(noop)}>
+            {fields.map((field, index) => (
+              <input
+                key={field.id}
+                name={`test.${index}.name`}
+                data-testid={`input-${index}`}
+              />
+            ))}
+            {errors.test?.root?.message && (
+              <span data-testid="error">{errors.test.root.message}</span>
+            )}
+            <button
+              type="button"
+              data-testid="append"
+              onClick={() => append({ name: 'new item' })}
+            >
+              Append
+            </button>
+            <button
+              type="button"
+              data-testid="remove"
+              onClick={() => remove(0)}
+            >
+              Remove
+            </button>
+          </form>
+        );
+      };
+
+      render(<App />);
+
+      // Initially no errors should be shown
+      expect(screen.queryByTestId('error')).toBeNull();
+
+      // Append should not trigger validation error in onBlur mode
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('append'));
+      });
+
+      // Still no errors because mode is onBlur and fields haven't been touched
+      expect(screen.queryByTestId('error')).toBeNull();
+
+      // Remove should also not trigger validation error
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('remove'));
+      });
+
+      // Still no errors because mode is onBlur and fields haven't been touched
+      expect(screen.queryByTestId('error')).toBeNull();
+    });
   });
 
   describe('with nested field array ', () => {

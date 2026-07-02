@@ -282,6 +282,54 @@ describe('subscribe', () => {
     expect(capturedValues).toEqual({ test: 'hello' });
   });
 
+  it('should not reuse the last field name when reset emits values', async () => {
+    const names: Array<string | undefined> = [];
+    const callbackFn = jest.fn(({ name }) => names.push(name));
+
+    const App = () => {
+      const { register, reset, subscribe } = useForm({
+        defaultValues: {
+          firstName: '',
+        },
+      });
+
+      React.useEffect(() => {
+        return subscribe({
+          formState: {
+            values: true,
+          },
+          callback: callbackFn,
+        });
+      }, [subscribe]);
+
+      return (
+        <form>
+          <input aria-label="firstName" {...register('firstName')} />
+          <button type="button" onClick={() => reset()}>
+            Reset
+          </button>
+        </form>
+      );
+    };
+
+    render(<App />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    fireEvent.change(screen.getByLabelText('firstName'), {
+      target: { value: 'a' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+
+    expect(names).toEqual([undefined, 'firstName', undefined]);
+    expect(callbackFn).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        values: {
+          firstName: '',
+        },
+      }),
+    );
+  });
+
   it('should keep isDirty true when reset keeps values and updates defaultValues', async () => {
     const callbackFn = jest.fn();
 

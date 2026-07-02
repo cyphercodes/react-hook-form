@@ -1750,6 +1750,7 @@ export function createFormControl<
       });
 
       _subjects.state.next({
+        name: undefined,
         values: { ...values } as TFieldValues,
       });
     }
@@ -1780,6 +1781,7 @@ export function createFormControl<
     }
 
     _subjects.state.next({
+      name: undefined,
       submitCount: keepStateOptions.keepSubmitCount
         ? _formState.submitCount
         : 0,
